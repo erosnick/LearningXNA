@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26228.4
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZombieSmashers", "ZombieSmashers\ZombieSmashers.csproj", "{B44CEAA1-C8D4-4824-B4DB-B1BD463E6DEE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapEditor", "MapEditor\MapEditor.csproj", "{9EA3FEFB-1DAD-4235-9BA8-C1C7B71A3C44}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{9B214258-4FD5-4259-AD00-447A0C752A34}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B44CEAA1-C8D4-4824-B4DB-B1BD463E6DEE}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{B44CEAA1-C8D4-4824-B4DB-B1BD463E6DEE}.Debug|x86.ActiveCfg = Debug|x86
+		{B44CEAA1-C8D4-4824-B4DB-B1BD463E6DEE}.Debug|x86.Build.0 = Debug|x86
+		{B44CEAA1-C8D4-4824-B4DB-B1BD463E6DEE}.Release|Any CPU.ActiveCfg = Release|x86
+		{B44CEAA1-C8D4-4824-B4DB-B1BD463E6DEE}.Release|x86.ActiveCfg = Release|x86
+		{B44CEAA1-C8D4-4824-B4DB-B1BD463E6DEE}.Release|x86.Build.0 = Release|x86
+		{9EA3FEFB-1DAD-4235-9BA8-C1C7B71A3C44}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{9EA3FEFB-1DAD-4235-9BA8-C1C7B71A3C44}.Debug|x86.ActiveCfg = Debug|x86
+		{9EA3FEFB-1DAD-4235-9BA8-C1C7B71A3C44}.Debug|x86.Build.0 = Debug|x86
+		{9EA3FEFB-1DAD-4235-9BA8-C1C7B71A3C44}.Release|Any CPU.ActiveCfg = Release|x86
+		{9EA3FEFB-1DAD-4235-9BA8-C1C7B71A3C44}.Release|x86.ActiveCfg = Release|x86
+		{9EA3FEFB-1DAD-4235-9BA8-C1C7B71A3C44}.Release|x86.Build.0 = Release|x86
+		{9B214258-4FD5-4259-AD00-447A0C752A34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B214258-4FD5-4259-AD00-447A0C752A34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B214258-4FD5-4259-AD00-447A0C752A34}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9B214258-4FD5-4259-AD00-447A0C752A34}.Debug|x86.Build.0 = Debug|Any CPU
+		{9B214258-4FD5-4259-AD00-447A0C752A34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B214258-4FD5-4259-AD00-447A0C752A34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B214258-4FD5-4259-AD00-447A0C752A34}.Release|x86.ActiveCfg = Release|Any CPU
+		{9B214258-4FD5-4259-AD00-447A0C752A34}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

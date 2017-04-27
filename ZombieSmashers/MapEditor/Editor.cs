@@ -29,6 +29,7 @@ namespace MapEditor
         int mouseX;
         int mouseY;
         bool rightMouseDown;
+        bool leftButtonPressed;
 
         int mouseDragSegment = -1;
         int currentLayer = 1;
@@ -91,6 +92,8 @@ namespace MapEditor
             OnClick += OnMouseClick;
             OnPressed += OnMouseLeftButtonPressed;
             OnReleased += OnMouseLeftButtonReleased;
+
+            leftButtonPressed = false;
 
             base.Initialize();
         }
@@ -243,9 +246,7 @@ namespace MapEditor
             mouseX = currentMouseState.X;
             mouseY = currentMouseState.Y;
 
-            bool mouseDown = rightMouseDown;
-
-            if (currentMouseState.LeftButton == ButtonState.Pressed)
+            if (leftButtonPressed)
             {
                 if (!rightMouseDown && mouseX < paletteOffsetX)
                 {
@@ -396,11 +397,13 @@ namespace MapEditor
 
         private void OnMouseLeftButtonPressed(MouseState mouseState)
         {
+            leftButtonPressed = true;
             Console.WriteLine("OnMouseLeftButtonPressed");
         }
 
         private void OnMouseLeftButtonReleased(MouseState mouseState)
         {
+            leftButtonPressed = false;
             Console.WriteLine("OnMouseLeftButtonReleased");
         }
 

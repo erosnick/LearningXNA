@@ -44,6 +44,7 @@
     <Compile Include="Classes\ICommand.cs" />
     <Compile Include="Classes\Map.cs" />
     <Compile Include="Classes\MapSegment.cs" />
+    <Compile Include="Classes\MoveCommand.cs" />
     <Compile Include="Classes\SegmentDefinition.cs" />
     <Compile Include="Editor.cs" />
     <Compile Include="Program.cs" />

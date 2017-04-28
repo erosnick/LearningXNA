@@ -6,6 +6,8 @@ using Shared;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System;
+using System.Text;
+using Microsoft.Xna.Framework.Content;
 
 namespace MapEditor
 {
@@ -17,9 +19,6 @@ namespace MapEditor
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
 
-        Text text;
-        SpriteFont font;
-
         Map map;
 
         Texture2D[] mapsTexture;
@@ -28,7 +27,7 @@ namespace MapEditor
         Texture2D icons;
         int mouseX;
         int mouseY;
-        bool rightMouseDown;
+        bool isDraggingSomthing;
         bool leftButtonPressed;
 
         int mouseDragSegment = -1;
@@ -54,6 +53,7 @@ namespace MapEditor
         private event EventHandler OnClick;
         private event EventHandler OnPressed;
         private event EventHandler OnReleased;
+        private event EventHandler OnMove;
 
         public Editor()
         {
@@ -92,8 +92,12 @@ namespace MapEditor
             OnClick += OnMouseClick;
             OnPressed += OnMouseLeftButtonPressed;
             OnReleased += OnMouseLeftButtonReleased;
+            OnMove += OnMouseMove;
 
             leftButtonPressed = false;
+
+            GameServices.AddService<GraphicsDevice>(GraphicsDevice);
+            GameServices.AddService<ContentManager>(Content);
 
             base.Initialize();
         }
@@ -108,9 +112,6 @@ namespace MapEditor
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
-            font = Content.Load<SpriteFont>(@"Fonts/Arial");
-            text = new Text(spriteBatch, font);
-
             nullTexture = Content.Load<Texture2D>(@"gfx/1x1");
             mapsTexture = new Texture2D[1];
             for (int i = 0; i < mapsTexture.Length; i++)
@@ -182,7 +183,7 @@ namespace MapEditor
 
         private void AddSegment()
         {
-            if (rightMouseDown)
+            if (leftButtonPressed)
             {
                 for (int i = 0; i < tileSourceBounds.Count; i++)
                 {
@@ -230,6 +231,12 @@ namespace MapEditor
             // TODO: Add your update logic here
             currentMouseState = Mouse.GetState();
 
+            if (lastMouseState.LeftButton == ButtonState.Released &&
+                currentMouseState.LeftButton == ButtonState.Pressed)
+            {
+                OnPressed(currentMouseState);
+            }
+
             if (currentMouseState.LeftButton == ButtonState.Released &&
                 lastMouseState.LeftButton == ButtonState.Pressed)
             {
@@ -237,10 +244,13 @@ namespace MapEditor
                 OnReleased(currentMouseState);
             }
 
-            if (lastMouseState.LeftButton == ButtonState.Released &&
-                currentMouseState.LeftButton == ButtonState.Pressed)
+            if (lastMouseState.X > 0 && lastMouseState.Y > 0)
             {
-                OnPressed(currentMouseState);
+                if (currentMouseState.X != lastMouseState.X ||
+                    currentMouseState.Y != lastMouseState.Y)
+                {
+                    OnMove(currentMouseState);
+                }
             }
 
             mouseX = currentMouseState.X;
@@ -248,7 +258,7 @@ namespace MapEditor
 
             if (leftButtonPressed)
             {
-                if (!rightMouseDown && mouseX < paletteOffsetX)
+                if (!isDraggingSomthing && mouseX < paletteOffsetX)
                 {
                     int index = map.GetHoveredSegment(mouseX, mouseY, currentLayer, scroll);
 
@@ -258,16 +268,16 @@ namespace MapEditor
                     }
                 }
 
-                rightMouseDown = true;
+                isDraggingSomthing = true;
             }
             else
             {
-                rightMouseDown = false;
+                isDraggingSomthing = false;
             }
 
             if (mouseDragSegment > -1)
             {
-                if (!rightMouseDown)
+                if (!isDraggingSomthing)
                 {
                     mouseDragSegment = -1;
                 }
@@ -327,6 +337,7 @@ namespace MapEditor
             DrawMapSegments();
             DrawCursor();
             DrawText();
+            DrawInfo();
 
             base.Draw(gameTime);
         }
@@ -342,8 +353,6 @@ namespace MapEditor
 
         private void DrawMapSegments()
         {
-            text.Size = 0.8f;
-
             DrawTransparentLayer(new Rectangle(paletteOffsetX, 20, 280, 550), new Color(0, 0, 0, 100));
 
             for (int i = 0; i < tileDestBounds.Count; i++)
@@ -361,8 +370,8 @@ namespace MapEditor
 
                 spriteBatch.End();
 
-                text.Color = Color.White;
-                text.DrawText(tileDestBounds[i].X + 50, tileDestBounds[i].Y, segmentDefinition.Name);
+                Text.Color = Color.White;
+                Text.DrawText(tileDestBounds[i].X + 50, tileDestBounds[i].Y, segmentDefinition.Name);
             }
         }
 
@@ -380,19 +389,26 @@ namespace MapEditor
             switch (currentLayer)
             {
                 case 0:
-                    layerName = "background";
+                    layerName = "0:background";
                     break;
 
                 case 1:
-                    layerName = "middle";
+                    layerName = "1:middle";
                     break;
 
                 case 2:
-                    layerName = "foreground";
+                    layerName = "2:foreground";
                     break;
             }
 
-            text.DrawClickText(5, 5, "Layer: " + layerName, mouseX, mouseY, false);
+            Text.DrawClickText(5, 5, "Layer: " + layerName, mouseX, mouseY, false);
+        }
+
+        private void DrawInfo()
+        {
+            var mouseState = Mouse.GetState();
+            
+            Text.DrawText(150, 5, String.Format("X = {0}, Y = {1}", mouseState.X, mouseState.Y));
         }
 
         private void OnMouseLeftButtonPressed(MouseState mouseState)
@@ -401,20 +417,24 @@ namespace MapEditor
             Console.WriteLine("OnMouseLeftButtonPressed");
         }
 
+        private void OnMouseClick(MouseState mouseState)
+        {
+            if (Text.DrawClickText(5, 5, "Layer: " + layerName, mouseState.X, mouseState.Y, true))
+            {
+                currentLayer = (currentLayer + 1) % 3;
+            }
+
+            Console.WriteLine("X = {0}, Y = {1}", mouseState.X, mouseState.Y);
+        }
+
         private void OnMouseLeftButtonReleased(MouseState mouseState)
         {
             leftButtonPressed = false;
             Console.WriteLine("OnMouseLeftButtonReleased");
         }
 
-        private void OnMouseClick(MouseState mouseState)
+        private void OnMouseMove(MouseState mouseState)
         {
-            if (text.DrawClickText(5, 5, "Layer: " + layerName, mouseState.X, mouseState.Y, true))
-            {
-                currentLayer = (currentLayer + 1) % 3;
-            }
-
-            Console.WriteLine("OnClick");
         }
     }
 }

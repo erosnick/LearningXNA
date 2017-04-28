@@ -3,6 +3,7 @@ using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
+using Shared;
 
 namespace MapEditor.Classes
 {
@@ -25,7 +26,7 @@ namespace MapEditor.Classes
 
         private void ReadSegmentDefinitions()
         {
-            StreamReader sr = new StreamReader(@"Content/maps.zdx");
+            StreamReader sr = new StreamReader(@"Content/map/maps.zdx");
             
             string line = "";
 
@@ -110,6 +111,7 @@ namespace MapEditor.Classes
 
             var mapSegment = new MapSegment();
             mapSegment.Index = index;
+            mapSegment.Layer = layer;
             MapSegments[layer].Add(mapSegment);
 
             return MapSegments[layer].Count - 1;
@@ -157,7 +159,11 @@ namespace MapEditor.Classes
                     destRect.Width = (int)(sourceRect.Width * sizeScale);
                     destRect.Height = (int)(sourceRect.Height * sizeScale);
 
-                    sprite.Draw(mapTexture[SegmentDefinitions[MapSegments[key][index].Index].SourceIndex], destRect, sourceRect, color);
+                    var segmentDefiniation = SegmentDefinitions[MapSegments[key][index].Index];
+                    var mapSegment = MapSegments[key][index];
+
+                    sprite.Draw(mapTexture[segmentDefiniation.SourceIndex], destRect, sourceRect, color);
+                    Text.DrawText(destRect.X, destRect.Y, String.Format("{0}", mapSegment.Layer));
                 }
             }
 
@@ -188,14 +194,14 @@ namespace MapEditor.Classes
             {
                 for (int index = 0; index < MapSegments[key].Count; index++)
                 {
-                        Rectangle sourceRect = SegmentDefinitions[MapSegments[currentLayer][index].Index].SourceRect;
+                        Rectangle sourceRect = SegmentDefinitions[MapSegments[key][index].Index].SourceRect;
 
-                        Rectangle destRect = new Rectangle((int)(MapSegments[currentLayer][index].Location.X - scroll.X * scale),
-                                                           (int)(MapSegments[currentLayer][index].Location.Y - scroll.Y * scale),
+                        Rectangle destRect = new Rectangle((int)(MapSegments[key][index].Location.X - scroll.X * scale),
+                                                           (int)(MapSegments[key][index].Location.Y - scroll.Y * scale),
                                                            (int)(sourceRect.Width * scale),
                                                            (int)(sourceRect.Height * scale));
 
-                        if (destRect.Contains(x, y))
+                        if (destRect.Contains(x, y) && key == currentLayer)
                         {
                             return index;
                         }

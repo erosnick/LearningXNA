@@ -1,25 +1,28 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace Shared
 {
     public class Text
     {
-        public float Size {get;set;} = 1.0f;
-        public Color Color { get; set; } = Color.White;
-        SpriteFont font;
-        SpriteBatch sprite;
-        private string text;
+        public static float Size {get;set;} = 1.0f;
+        public static Color Color { get; set; } = Color.White;
+        static SpriteFont font;
+        static SpriteBatch sprite;
+        static private string text;
 
-        public Text(SpriteBatch sprite, SpriteFont font)
+        static Text()
         {
-            this.sprite = sprite;
-            this.font = font;
+            var graphicDevice = GameServices.GetService<GraphicsDevice>();
+            var content = GameServices.GetService<ContentManager>();
+            sprite = new SpriteBatch(graphicDevice);
+            font = content.Load<SpriteFont>(@"font/Arial");
         }
 
-        public void DrawText(int x, int y, string text)
+        public static void DrawText(int x, int y, string inText)
         {
-            this.text = text;
+            text = inText;
 
             sprite.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
 
@@ -28,7 +31,7 @@ namespace Shared
             sprite.End();
         }
 
-        public bool DrawClickText(int x, int y, string text, int mouseX, int mouseY, bool mouseClick)
+        public static bool DrawClickText(int x, int y, string text, int mouseX, int mouseY, bool mouseClick)
         {
             bool r = false;
 

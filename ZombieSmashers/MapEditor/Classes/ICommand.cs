@@ -9,7 +9,7 @@ namespace MapEditor.Classes
 {
     public interface ICommand
     {
-        void Execute(MapSegment segment, Vector2 newPosition);
+        void Execute();
         void UndoExecute();
     }
 }

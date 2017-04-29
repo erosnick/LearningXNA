@@ -27,7 +27,8 @@ namespace MapEditor
         Texture2D icons;
         int mouseX;
         int mouseY;
-        bool isDraggingSomthing;
+        bool canMoveTile;
+        bool isDraggingSomething;
         bool leftButtonPressed;
 
         int mouseDragSegment = -1;
@@ -48,12 +49,19 @@ namespace MapEditor
 
         private string layerName = "";
 
+        int coolDown;
+
+        Vector2 lastLocation;
+
         private delegate void EventHandler(MouseState mouseState);
+        private delegate void EventHandlerNoParams();
 
         private event EventHandler OnClick;
         private event EventHandler OnPressed;
         private event EventHandler OnReleased;
         private event EventHandler OnMove;
+        private event EventHandlerNoParams OnCtrlPlusZ;
+        private event EventHandlerNoParams OnCtrlPlusY;
 
         public Editor()
         {
@@ -93,6 +101,8 @@ namespace MapEditor
             OnPressed += OnMouseLeftButtonPressed;
             OnReleased += OnMouseLeftButtonReleased;
             OnMove += OnMouseMove;
+            OnCtrlPlusZ += OnCtrlZ;
+            OnCtrlPlusY += OnCtrlY;
 
             leftButtonPressed = false;
 
@@ -131,7 +141,7 @@ namespace MapEditor
             // TODO: Unload any non ContentManager content here
         }
 
-        private void HandleInput()
+        private void HandleInput(int deltaTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
@@ -147,6 +157,80 @@ namespace MapEditor
             else if (Keyboard.GetState().IsKeyDown(Keys.D3))
             {
                 currentLayer = 2;
+            }
+
+            currentMouseState = Mouse.GetState();
+
+            if (lastMouseState.LeftButton == ButtonState.Released &&
+                currentMouseState.LeftButton == ButtonState.Pressed)
+            {
+                OnPressed(currentMouseState);
+            }
+
+            if (currentMouseState.LeftButton == ButtonState.Released &&
+                lastMouseState.LeftButton == ButtonState.Pressed)
+            {
+                OnClick(currentMouseState);
+                OnReleased(currentMouseState);
+            }
+
+            if (lastMouseState.X > 0 && lastMouseState.Y > 0)
+            {
+                if (currentMouseState.X != lastMouseState.X ||
+                    currentMouseState.Y != lastMouseState.Y)
+                {
+                    OnMove(currentMouseState);
+                }
+            }
+
+            var keys = Keyboard.GetState().GetPressedKeys();
+
+            var hasCtrl = false;
+            var hasZ = false;
+            var hasY = false;
+
+            foreach (var key in keys)
+            {
+                if (key == Keys.LeftControl)
+                {
+                    hasCtrl = true;
+                }
+
+                if (key == Keys.Z)
+                {
+                    hasZ = true;
+                }
+
+                if (key == Keys.Y)
+                {
+                    hasY = true;
+                }
+            }
+
+            if (hasCtrl && hasZ)
+            {
+                if (coolDown <= 0.0f)
+                {
+                    OnCtrlPlusZ();
+                    coolDown = 100;
+                }
+                else
+                {
+                    coolDown -= deltaTime;
+                }
+            }
+
+            if (hasCtrl && hasY)
+            {
+                if (coolDown <= 0.0f)
+                {
+                    OnCtrlPlusY();
+                    coolDown = 100;
+                }
+                else
+                {
+                    coolDown -= deltaTime;
+                }
             }
         }
 
@@ -213,6 +297,7 @@ namespace MapEditor
                             map.MapSegments[currentLayer][index].Location.X = (mouseX - tileSourceBounds[i].Width / 4 + scroll.X * layerScalar);
                             map.MapSegments[currentLayer][index].Location.Y = (mouseY - tileSourceBounds[i].Height / 4 + scroll.Y * layerScalar);
                             mouseDragSegment = index;
+                            break;
                         }
                     }
                 }
@@ -226,63 +311,22 @@ namespace MapEditor
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            HandleInput();
-
             // TODO: Add your update logic here
-            currentMouseState = Mouse.GetState();
-
-            if (lastMouseState.LeftButton == ButtonState.Released &&
-                currentMouseState.LeftButton == ButtonState.Pressed)
-            {
-                OnPressed(currentMouseState);
-            }
-
-            if (currentMouseState.LeftButton == ButtonState.Released &&
-                lastMouseState.LeftButton == ButtonState.Pressed)
-            {
-                OnClick(currentMouseState);
-                OnReleased(currentMouseState);
-            }
-
-            if (lastMouseState.X > 0 && lastMouseState.Y > 0)
-            {
-                if (currentMouseState.X != lastMouseState.X ||
-                    currentMouseState.Y != lastMouseState.Y)
-                {
-                    OnMove(currentMouseState);
-                }
-            }
+            HandleInput(gameTime.ElapsedGameTime.Milliseconds);
 
             mouseX = currentMouseState.X;
             mouseY = currentMouseState.Y;
 
-            if (leftButtonPressed)
-            {
-                if (!isDraggingSomthing && mouseX < paletteOffsetX)
-                {
-                    int index = map.GetHoveredSegment(mouseX, mouseY, currentLayer, scroll);
-
-                    if (index != -1)
-                    {
-                        mouseDragSegment = index;
-                    }
-                }
-
-                isDraggingSomthing = true;
-            }
-            else
-            {
-                isDraggingSomthing = false;
-            }
-
             if (mouseDragSegment > -1)
             {
-                if (!isDraggingSomthing)
+                if (!canMoveTile)
                 {
+                    isDraggingSomething = false;
                     mouseDragSegment = -1;
                 }
                 else
                 {
+                    isDraggingSomething = true;
                     Vector2 location = map.MapSegments[currentLayer][mouseDragSegment].Location;
 
                     location.X += (mouseX - preMouseX);
@@ -303,7 +347,7 @@ namespace MapEditor
             preMouseX = mouseX;
             preMouseY = mouseY;
 
-            AddSegment();
+            //AddSegment();
 
             lastMouseState = currentMouseState;
 
@@ -414,6 +458,27 @@ namespace MapEditor
         private void OnMouseLeftButtonPressed(MouseState mouseState)
         {
             leftButtonPressed = true;
+
+            AddSegment();
+
+            if (!canMoveTile && mouseState.Y < paletteOffsetX)
+            {
+                int index = map.GetHoveredSegment(mouseState.X, mouseState.Y, currentLayer, scroll);
+
+                if (index != -1)
+                {
+                    mouseDragSegment = index;
+                }
+            }
+
+            canMoveTile = true;
+
+            if (mouseDragSegment >= 0)
+            {
+                lastLocation = map.MapSegments[currentLayer][mouseDragSegment].Location;
+                Console.WriteLine(String.Format("lastLocation:{0}, {1}", lastLocation.X, lastLocation.Y));
+            }
+
             Console.WriteLine("OnMouseLeftButtonPressed");
         }
 
@@ -429,12 +494,35 @@ namespace MapEditor
 
         private void OnMouseLeftButtonReleased(MouseState mouseState)
         {
+            if (isDraggingSomething)
+            {
+                var command = new MoveCommand(map.MapSegments[currentLayer][mouseDragSegment], lastLocation);
+
+                CommandManager.ExecuteCommand(command);
+
+                Console.WriteLine("Drag");
+            }
+
             leftButtonPressed = false;
+            canMoveTile = false;
+
             Console.WriteLine("OnMouseLeftButtonReleased");
         }
 
         private void OnMouseMove(MouseState mouseState)
         {
+        }
+
+        private void OnCtrlZ()
+        {
+            CommandManager.UndoCommand();
+            Console.WriteLine("Undo");
+        }
+
+        private void OnCtrlY()
+        {
+            CommandManager.RedoCommand();
+            Console.WriteLine("Redo");
         }
     }
 }

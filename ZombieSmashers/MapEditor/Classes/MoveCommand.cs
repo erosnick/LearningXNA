@@ -9,17 +9,25 @@ namespace MapEditor.Classes
 {
     class MoveCommand : ICommand
     {
-        private Vector2 oldPosition;
+        private Vector2 oldLocation;
+        private Vector2 newLocation;
+        private MapSegment segment;
 
-        public void Execute(MapSegment segment, Vector2 newLocation)
+        public MoveCommand(MapSegment segment, Vector2 newLocation)
         {
-            oldPosition = segment.Location;
+            this.segment = segment;
+            oldLocation = newLocation;
+            this.newLocation = segment.Location;
+        }
+
+        public void Execute()
+        {
             segment.Location = newLocation;
         }
 
         public void UndoExecute()
         {
-            throw new NotImplementedException();
+            segment.Location = oldLocation;
         }
     }
 }

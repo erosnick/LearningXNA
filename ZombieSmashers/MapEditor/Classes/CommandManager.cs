@@ -52,7 +52,9 @@ namespace MapEditor.Classes
         {
             if (redoList.Count > 0)
             {
-                redoList.Pop().Execute();
+                var command = redoList.Pop();
+                command.Execute();
+                undoList.Push(command);
             }
         }
     }

@@ -48,6 +48,8 @@ namespace Shared
 
             DrawText(x, y, text);
 
+            Color = Color.White;
+
             return r;
         }
         

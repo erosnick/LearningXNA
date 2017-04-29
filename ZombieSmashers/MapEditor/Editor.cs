@@ -30,6 +30,7 @@ namespace MapEditor
         bool canMoveTile;
         bool isDraggingSomething;
         bool leftButtonPressed;
+        bool rightButtonPressed;
 
         int mouseDragSegment = -1;
         int currentLayer = 1;
@@ -39,7 +40,7 @@ namespace MapEditor
         bool middleMouseDown;
         Vector2 scroll;
 
-        int paletteOffsetX = 600;
+        int paletteOffsetX = 608;
 
         List<Rectangle> tileSourceBounds;
         List<Rectangle> tileDestBounds;
@@ -56,12 +57,23 @@ namespace MapEditor
         private delegate void EventHandler(MouseState mouseState);
         private delegate void EventHandlerNoParams();
 
-        private event EventHandler OnClick;
-        private event EventHandler OnPressed;
-        private event EventHandler OnReleased;
-        private event EventHandler OnMove;
+        private event EventHandler onMouseLeftButtonClick;
+        private event EventHandler onMouseRightButtonClick;
+        private event EventHandler onMouseLeftButtonPressed;
+        private event EventHandler onMouseLeftButtonReleased;
+        private event EventHandler onMouseRightButtonPressed;
+        private event EventHandler onMouseRightButtonReleased;
+        private event EventHandler onMouseMove;
         private event EventHandlerNoParams OnCtrlPlusZ;
         private event EventHandlerNoParams OnCtrlPlusY;
+
+        enum DrawingMode
+        {
+            SegmentSelection,
+            CollisionMap
+        }
+
+        DrawingMode drawingMode = DrawingMode.SegmentSelection;
 
         public Editor()
         {
@@ -97,10 +109,13 @@ namespace MapEditor
 
             GenerateTileBounds();
 
-            OnClick += OnMouseClick;
-            OnPressed += OnMouseLeftButtonPressed;
-            OnReleased += OnMouseLeftButtonReleased;
-            OnMove += OnMouseMove;
+            onMouseLeftButtonClick += OnMouseLeftButtonClick;
+            onMouseLeftButtonPressed += OnMouseLeftButtonPressed;
+            onMouseLeftButtonReleased += OnMouseLeftButtonReleased;
+            onMouseRightButtonClick += OnMouseRightButtonClick;
+            onMouseRightButtonPressed += OnMouseRightButtonPressed;
+            onMouseRightButtonReleased += OnMouseRightButtonReleased;
+            onMouseMove += OnMouseMove;
             OnCtrlPlusZ += OnCtrlZ;
             OnCtrlPlusY += OnCtrlY;
 
@@ -164,14 +179,14 @@ namespace MapEditor
             if (lastMouseState.LeftButton == ButtonState.Released &&
                 currentMouseState.LeftButton == ButtonState.Pressed)
             {
-                OnPressed(currentMouseState);
+                onMouseLeftButtonPressed(currentMouseState);
             }
 
             if (currentMouseState.LeftButton == ButtonState.Released &&
                 lastMouseState.LeftButton == ButtonState.Pressed)
             {
-                OnClick(currentMouseState);
-                OnReleased(currentMouseState);
+                onMouseLeftButtonClick(currentMouseState);
+                onMouseLeftButtonReleased(currentMouseState);
             }
 
             if (lastMouseState.X > 0 && lastMouseState.Y > 0)
@@ -179,7 +194,29 @@ namespace MapEditor
                 if (currentMouseState.X != lastMouseState.X ||
                     currentMouseState.Y != lastMouseState.Y)
                 {
-                    OnMove(currentMouseState);
+                    onMouseMove(currentMouseState);
+                }
+            }
+
+            if (lastMouseState.RightButton == ButtonState.Released &&
+                currentMouseState.RightButton == ButtonState.Pressed)
+            {
+                onMouseRightButtonPressed(currentMouseState);
+            }
+
+            if (currentMouseState.RightButton == ButtonState.Released &&
+                lastMouseState.RightButton == ButtonState.Pressed)
+            {
+                onMouseRightButtonClick(currentMouseState);
+                onMouseRightButtonReleased(currentMouseState);
+            }
+
+            if (lastMouseState.X > 0 && lastMouseState.Y > 0)
+            {
+                if (currentMouseState.X != lastMouseState.X ||
+                    currentMouseState.Y != lastMouseState.Y)
+                {
+                    onMouseMove(currentMouseState);
                 }
             }
 
@@ -378,7 +415,12 @@ namespace MapEditor
 
             map.Draw(spriteBatch, mapsTexture, scroll);
 
-            DrawMapSegments();
+            if (drawingMode == DrawingMode.SegmentSelection)
+            {
+                DrawMapSegments();
+            }
+
+            DrawGrid();
             DrawCursor();
             DrawText();
             DrawInfo();
@@ -446,6 +488,19 @@ namespace MapEditor
             }
 
             Text.DrawClickText(5, 5, "Layer: " + layerName, mouseX, mouseY, false);
+
+            switch (drawingMode)
+            {
+                case DrawingMode.SegmentSelection:
+                    layerName = "segement";
+                    break;
+
+                case DrawingMode.CollisionMap:
+                    layerName = "collison";
+                    break;
+            }
+
+            Text.DrawClickText(5, 25, "draw: " + layerName, mouseX, mouseY, false);
         }
 
         private void DrawInfo()
@@ -455,23 +510,80 @@ namespace MapEditor
             Text.DrawText(150, 5, String.Format("X = {0}, Y = {1}", mouseState.X, mouseState.Y));
         }
 
+        private void DrawGrid()
+        {
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+
+            for (int y = 0; y < 20; y++)
+            {
+                for (int x = 0; x < 20; x++)
+                {
+                    Rectangle destRect = new Rectangle(x * 32 - (int)(scroll.X / 2),
+                                                       y * 32 - (int)(scroll.Y / 2),
+                                                       32, 32);
+
+                    if (x < 19)
+                    {
+                        spriteBatch.Draw(nullTexture, new Rectangle(destRect.X, destRect.Y, 32, 1), new Color(255, 0, 0, 100));
+                    }
+
+                    if (y < 19)
+                    {
+                        spriteBatch.Draw(nullTexture, new Rectangle(destRect.X, destRect.Y, 1, 32), new Color(255, 0, 0, 100));
+                    }
+
+                    if (x < 19 && y < 19)
+                    {
+                        if (map.Grid[x, y] == 1)
+                        {
+                            spriteBatch.Draw(nullTexture, destRect, new Color(255, 0, 0, 100));
+                        }
+                    }
+                }
+            }
+
+            var color = new Color(255, 255, 255, 100);
+            spriteBatch.Draw(nullTexture, new Rectangle(100, 50, 400, 1), color);
+            spriteBatch.Draw(nullTexture, new Rectangle(100, 50, 1, 500), color);
+            spriteBatch.Draw(nullTexture, new Rectangle(500, 50, 1, 500), color);
+            spriteBatch.Draw(nullTexture, new Rectangle(100, 550, 400, 1), color);
+
+            spriteBatch.End();
+        }
+
+        private bool GetCanEdit()
+        {
+            if (mouseX > 100 && mouseY < paletteOffsetX && mouseY > 100 && mouseY < 550)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         private void OnMouseLeftButtonPressed(MouseState mouseState)
         {
             leftButtonPressed = true;
 
             AddSegment();
 
-            if (!canMoveTile && mouseState.Y < paletteOffsetX)
+            if (!canMoveTile)
             {
-                int index = map.GetHoveredSegment(mouseState.X, mouseState.Y, currentLayer, scroll);
-
-                if (index != -1)
+                if (drawingMode == DrawingMode.SegmentSelection)
                 {
-                    mouseDragSegment = index;
+                    if (!canMoveTile && mouseState.Y < paletteOffsetX)
+                    {
+                        int index = map.GetHoveredSegment(mouseState.X, mouseState.Y, currentLayer, scroll);
+
+                        if (index != -1)
+                        {
+                            mouseDragSegment = index;
+                        }
+                    }
+
+                    canMoveTile = true;
                 }
             }
-
-            canMoveTile = true;
 
             if (mouseDragSegment >= 0)
             {
@@ -482,11 +594,16 @@ namespace MapEditor
             Console.WriteLine("OnMouseLeftButtonPressed");
         }
 
-        private void OnMouseClick(MouseState mouseState)
+        private void OnMouseLeftButtonClick(MouseState mouseState)
         {
             if (Text.DrawClickText(5, 5, "Layer: " + layerName, mouseState.X, mouseState.Y, true))
             {
                 currentLayer = (currentLayer + 1) % 3;
+            }
+
+            if (Text.DrawClickText(5, 25, "draw: " + layerName, mouseX, mouseY, true))
+            {
+                drawingMode = (DrawingMode)((int)(drawingMode + 1) % 2);
             }
 
             Console.WriteLine("X = {0}, Y = {1}", mouseState.X, mouseState.Y);
@@ -507,6 +624,25 @@ namespace MapEditor
             canMoveTile = false;
 
             Console.WriteLine("OnMouseLeftButtonReleased");
+        }
+
+        private void OnMouseRightButtonPressed(MouseState mouseState)
+        {
+            rightButtonPressed = true;
+
+            Console.WriteLine("OnMouseRightButtonPressed");
+        }
+
+        private void OnMouseRightButtonClick(MouseState mouseState)
+        {
+            Console.WriteLine("OnMouseRightButtonClick");
+        }
+
+        private void OnMouseRightButtonReleased(MouseState mouseState)
+        {
+            rightButtonPressed = false;
+
+            Console.WriteLine("OnMouseRightButtonReleased");
         }
 
         private void OnMouseMove(MouseState mouseState)

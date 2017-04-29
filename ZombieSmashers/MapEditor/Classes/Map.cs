@@ -10,6 +10,7 @@ namespace MapEditor.Classes
     public class Map
     {
         public List<SegmentDefinition> SegmentDefinitions { set; get; }
+        public int [,] Grid { set; get; }
 
         // Up to three layers, 64 segments
         public MapSegment[,] Segments { get; set; }
@@ -20,6 +21,7 @@ namespace MapEditor.Classes
             Segments = new MapSegment[3, 64];
             MapSegments = new Dictionary<int, List<MapSegment>>();
             SegmentDefinitions = new List<SegmentDefinition>();
+            Grid = new int [20, 20];
 
             ReadSegmentDefinitions();
         }

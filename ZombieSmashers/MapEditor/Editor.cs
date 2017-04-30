@@ -54,6 +54,13 @@ namespace MapEditor
 
         Vector2 lastLocation;
 
+        int currentLedge;
+        int currentNode;
+
+        bool mouseClick;
+
+        List<Vector2> ledgePaletteLocation;
+
         private delegate void EventHandler(MouseState mouseState);
         private delegate void EventHandlerNoParams();
 
@@ -70,7 +77,8 @@ namespace MapEditor
         enum DrawingMode
         {
             SegmentSelection,
-            CollisionMap
+            CollisionMap,
+            Ledges
         }
 
         DrawingMode drawingMode = DrawingMode.SegmentSelection;
@@ -123,6 +131,14 @@ namespace MapEditor
 
             GameServices.AddService<GraphicsDevice>(GraphicsDevice);
             GameServices.AddService<ContentManager>(Content);
+
+            ledgePaletteLocation = new List<Vector2>();
+
+            for (int i = 0; i < 16; i++)
+            {
+                var y = 50 + i * 20;
+                ledgePaletteLocation.Add(new Vector2(paletteOffsetX, y));
+            }
 
             base.Initialize();
         }
@@ -304,38 +320,35 @@ namespace MapEditor
 
         private void AddSegment()
         {
-            if (leftButtonPressed)
+            for (int i = 0; i < tileSourceBounds.Count; i++)
             {
-                for (int i = 0; i < tileSourceBounds.Count; i++)
+                if (mouseX > tileDestBounds[i].X && mouseX < 780 &&
+                    mouseY > tileDestBounds[i].Y && mouseY < tileDestBounds[i].Y + 45)
                 {
-                    if (mouseX > tileDestBounds[i].X && mouseX < 780 &&
-                        mouseY > tileDestBounds[i].Y && mouseY < tileDestBounds[i].Y + 45)
+                    if (mouseDragSegment == -1)
                     {
-                        if (mouseDragSegment == -1)
+                        int index = map.AddSegment(currentLayer, i);
+
+                        if (index <= -1)
                         {
-                            int index = map.AddSegment(currentLayer, i);
-
-                            if (index <= -1)
-                            {
-                                continue;
-                            }
-
-                            float layerScalar = 0.5f;
-
-                            //if (currentLayer == 0)
-                            //{
-                            //    layerScalar = 0.375f;
-                            //}
-                            //else if (currentLayer == 2)
-                            //{
-                            //    layerScalar = 0.6125f;
-                            //}
-
-                            map.MapSegments[currentLayer][index].Location.X = (mouseX - tileSourceBounds[i].Width / 4 + scroll.X * layerScalar);
-                            map.MapSegments[currentLayer][index].Location.Y = (mouseY - tileSourceBounds[i].Height / 4 + scroll.Y * layerScalar);
-                            mouseDragSegment = index;
-                            break;
+                            continue;
                         }
+
+                        float layerScalar = 0.5f;
+
+                        //if (currentLayer == 0)
+                        //{
+                        //    layerScalar = 0.375f;
+                        //}
+                        //else if (currentLayer == 2)
+                        //{
+                        //    layerScalar = 0.6125f;
+                        //}
+
+                        map.MapSegments[currentLayer][index].Location.X = (mouseX - tileSourceBounds[i].Width / 4 + scroll.X * layerScalar);
+                        map.MapSegments[currentLayer][index].Location.Y = (mouseY - tileSourceBounds[i].Height / 4 + scroll.Y * layerScalar);
+                        mouseDragSegment = index;
+                        break;
                     }
                 }
             }
@@ -421,6 +434,13 @@ namespace MapEditor
             }
 
             DrawGrid();
+
+            if (drawingMode == DrawingMode.Ledges)
+            {
+                DrawLedges();
+                DrawLedgePalette();
+            }
+
             DrawCursor();
             DrawText();
             DrawInfo();
@@ -498,6 +518,10 @@ namespace MapEditor
                 case DrawingMode.CollisionMap:
                     layerName = "collison";
                     break;
+
+                case DrawingMode.Ledges:
+                    layerName = "ledge";
+                    break;
             }
 
             Text.DrawClickText(5, 25, "draw: " + layerName, mouseX, mouseY, false);
@@ -551,9 +575,97 @@ namespace MapEditor
             spriteBatch.End();
         }
 
+        private void DrawLedges()
+        {
+            Rectangle rect = new Rectangle();
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+
+            Color tColor = new Color();
+
+            rect.X = 32;
+            rect.Y = 0;
+            rect.Width = 32;
+            rect.Height = 32;
+
+            for (int i = 0; i < 16; i++)
+            {
+                for (int n = 0; n < map.Ledges[i].TotalNodes; n++)
+                {
+                    if (map.Ledges[i] != null && map.Ledges[i].TotalNodes > 0)
+                    {
+                        var tVect = map.Ledges[i].Nodes[n];
+                        tVect -= scroll / 2.0f;
+                        tVect.X -= 5.0f;
+
+                        if (currentLedge == i)
+                        {
+                            tColor = Color.Yellow;
+                        }
+                        else
+                        {
+                            tColor = Color.White;
+                        }
+
+                        spriteBatch.Draw(icons, tVect, rect, tColor, 0.0f, Vector2.Zero, 0.35f, SpriteEffects.None, 0.0f);
+
+                        if (n < map.Ledges[i].TotalNodes - 1)
+                        {
+                            var nVect = map.Ledges[i].Nodes[n + 1];
+                            nVect -= scroll / 2.0f;
+                            nVect.X -= 4.0f;
+
+                            for (int x = 1; x < 20; x++)
+                            {
+                                var iVect = tVect + (nVect - tVect) * ((float)x / 20.0f);
+
+                                var nColor = new Color(255, 255, 255, 75);
+
+                                if (map.Ledges[i].Flags == 1)
+                                {
+                                    nColor = new Color(255, 0, 0, 75);
+
+                                    spriteBatch.Draw(icons, iVect, rect, nColor, 0.0f, Vector2.Zero, 0.25f, SpriteEffects.None, 0.0f);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            spriteBatch.End();
+        }
+
+        private void DrawLedgePalette()
+        {
+            for (int i = 0; i < 16; i++)
+            {
+                if (map.Ledges[i] == null)
+                {
+                    continue;
+                }
+
+                var y = (int)ledgePaletteLocation[i].Y;
+
+                if (currentLedge == i)
+                {
+                    Text.Color = Color.Lime;
+                    Text.DrawText(paletteOffsetX, y, "ledge " + i.ToString());
+                }
+                else
+                {
+                    Text.DrawClickText(paletteOffsetX, y, "ledge " + i.ToString(), mouseX, mouseY, mouseClick);
+                }
+
+                Text.Color = Color.White;
+                Text.DrawText(708, y, "n" + map.Ledges[i].TotalNodes.ToString());
+
+                Text.DrawClickText(768, y, "f" + map.Ledges[i].Flags.ToString(), mouseX, mouseY, mouseClick);
+            }
+        }
+
         private bool GetCanEdit()
         {
-            if (mouseX > 100 && mouseY < paletteOffsetX && mouseY > 100 && mouseY < 550)
+            if (mouseX > 100 && mouseX < paletteOffsetX && mouseY > 100 && mouseY < 550)
             {
                 return true;
             }
@@ -565,24 +677,56 @@ namespace MapEditor
         {
             leftButtonPressed = true;
 
-            AddSegment();
+            if (drawingMode == DrawingMode.SegmentSelection)
+            {
+                AddSegment();
+            }
 
             if (!canMoveTile)
             {
-                if (drawingMode == DrawingMode.SegmentSelection)
+                if (GetCanEdit())
                 {
-                    if (!canMoveTile && mouseState.Y < paletteOffsetX)
+                    if (drawingMode == DrawingMode.SegmentSelection)
                     {
-                        int index = map.GetHoveredSegment(mouseState.X, mouseState.Y, currentLayer, scroll);
-
-                        if (index != -1)
+                        if (!canMoveTile && mouseState.Y < paletteOffsetX)
                         {
-                            mouseDragSegment = index;
+                            int index = map.GetHoveredSegment(mouseState.X, mouseState.Y, currentLayer, scroll);
+
+                            if (index != -1)
+                            {
+                                mouseDragSegment = index;
+                            }
+                        }
+
+                        canMoveTile = true;
+                    }
+                    else if (drawingMode == DrawingMode.CollisionMap)
+                    {
+                        int x = (mouseState.X + (int)(scroll.X / 2)) / 32;
+                        int y = (mouseState.Y + (int)(scroll.Y / 2)) / 32;
+
+                        if (x >= 0 && x < map.GridSizeX && y >= 0 && y < map.GridSizeY)
+                        {
+                            map.Grid[x, y] = 1;
                         }
                     }
+                    else if (drawingMode == DrawingMode.Ledges)
+                    {
+                        if (map.Ledges[currentLedge] == null)
+                        {
+                            map.Ledges[currentLedge] = new Ledge();
+                        }
 
-                    canMoveTile = true;
+                        if (map.Ledges[currentLedge].TotalNodes < 15)
+                        {
+                            map.Ledges[currentLedge].Nodes[map.Ledges[currentLedge].TotalNodes] = new Vector2(mouseX, mouseY) + scroll / 2.0F;
+
+                            map.Ledges[currentLedge].TotalNodes++;
+                        }
+                    }
                 }
+
+                canMoveTile = true;
             }
 
             if (mouseDragSegment >= 0)
@@ -596,14 +740,34 @@ namespace MapEditor
 
         private void OnMouseLeftButtonClick(MouseState mouseState)
         {
-            if (Text.DrawClickText(5, 5, "Layer: " + layerName, mouseState.X, mouseState.Y, true))
+            mouseClick = true;
+
+            if (Text.DrawClickText(5, 5, "Layer: " + layerName, mouseState.X, mouseState.Y, mouseClick))
             {
                 currentLayer = (currentLayer + 1) % 3;
             }
 
-            if (Text.DrawClickText(5, 25, "draw: " + layerName, mouseX, mouseY, true))
+            if (Text.DrawClickText(5, 25, "draw: " + layerName, mouseX, mouseY, mouseClick))
             {
-                drawingMode = (DrawingMode)((int)(drawingMode + 1) % 2);
+                drawingMode = (DrawingMode)((int)(drawingMode + 1) % 3);
+            }
+
+            if (drawingMode == DrawingMode.Ledges)
+            {
+                for (int i = 0; i < 16; i++)
+                {
+                    var y = (int)ledgePaletteLocation[i].Y;
+
+                    if (Text.DrawClickText(paletteOffsetX, y, "ledge " + i.ToString(), mouseX, mouseY, mouseClick))
+                    {
+                        currentLedge = i;
+                    }
+
+                    if (Text.DrawClickText(768, y, "f" + map.Ledges[i].Flags.ToString(), mouseX, mouseY, mouseClick))
+                    {
+                        map.Ledges[i].Flags = (map.Ledges[i].Flags + 1) % 2;
+                    }
+                }
             }
 
             Console.WriteLine("X = {0}, Y = {1}", mouseState.X, mouseState.Y);
@@ -611,6 +775,8 @@ namespace MapEditor
 
         private void OnMouseLeftButtonReleased(MouseState mouseState)
         {
+            mouseClick = false;
+
             if (isDraggingSomething)
             {
                 var command = new MoveCommand(map.MapSegments[currentLayer][mouseDragSegment], lastLocation);
@@ -629,6 +795,17 @@ namespace MapEditor
         private void OnMouseRightButtonPressed(MouseState mouseState)
         {
             rightButtonPressed = true;
+
+            if (drawingMode == DrawingMode.CollisionMap)
+            {
+                int x = (mouseState.X + (int)(scroll.X / 2)) / 32;
+                int y = (mouseState.Y + (int)(scroll.Y / 2)) / 32;
+
+                if (x >= 0 && x < map.GridSizeX && y >= 0 && y < map.GridSizeY)
+                {
+                    map.Grid[x, y] = 0;
+                }
+            }
 
             Console.WriteLine("OnMouseRightButtonPressed");
         }

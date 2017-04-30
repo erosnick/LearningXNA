@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="Classes\CommandManager.cs" />
     <Compile Include="Classes\ICommand.cs" />
+    <Compile Include="Classes\Ledge.cs" />
     <Compile Include="Classes\Map.cs" />
     <Compile Include="Classes\MapSegment.cs" />
     <Compile Include="Classes\MoveCommand.cs" />

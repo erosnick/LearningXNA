@@ -11,17 +11,25 @@ namespace MapEditor.Classes
     {
         public List<SegmentDefinition> SegmentDefinitions { set; get; }
         public int [,] Grid { set; get; }
+        public int GridSizeX = 20;
+        public int GridSizeY = 20;
 
         // Up to three layers, 64 segments
         public MapSegment[,] Segments { get; set; }
         public Dictionary<int, List<MapSegment> > MapSegments;
+        public Ledge[] Ledges { get; set; }
 
         public Map()
         {
             Segments = new MapSegment[3, 64];
             MapSegments = new Dictionary<int, List<MapSegment>>();
             SegmentDefinitions = new List<SegmentDefinition>();
-            Grid = new int [20, 20];
+            Grid = new int [GridSizeX, GridSizeY];
+            Ledges = new Ledge[16];
+            for (int i = 0; i < 16; i++)
+            {
+                Ledges[i] = new Ledge();
+            }
 
             ReadSegmentDefinitions();
         }

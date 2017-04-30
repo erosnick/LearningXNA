@@ -19,6 +19,8 @@ namespace MapEditor.Classes
         public Dictionary<int, List<MapSegment> > MapSegments;
         public Ledge[] Ledges { get; set; }
 
+        public string Path { get; set; } = "maps.zdx";
+
         public Map()
         {
             Segments = new MapSegment[3, 64];

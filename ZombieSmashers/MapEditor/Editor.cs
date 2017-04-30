@@ -61,6 +61,9 @@ namespace MapEditor
 
         List<Vector2> ledgePaletteLocation;
 
+        KeyboardState oldKeyboardState;
+        EditingMode editingMode = EditingMode.None;
+
         private delegate void EventHandler(MouseState mouseState);
         private delegate void EventHandlerNoParams();
 
@@ -79,6 +82,12 @@ namespace MapEditor
             SegmentSelection,
             CollisionMap,
             Ledges
+        }
+
+        enum EditingMode
+        {
+            None,
+            Path
         }
 
         DrawingMode drawingMode = DrawingMode.SegmentSelection;
@@ -285,6 +294,8 @@ namespace MapEditor
                     coolDown -= deltaTime;
                 }
             }
+
+            UpdateKeys();
         }
 
         private void GenerateTileBounds()
@@ -402,6 +413,75 @@ namespace MapEditor
             lastMouseState = currentMouseState;
 
             base.Update(gameTime);
+        }
+
+        private void UpdateKeys()
+        {
+            KeyboardState keyboardState = Keyboard.GetState();
+
+            Keys[] currentKeys = keyboardState.GetPressedKeys();
+            Keys[] lastKeys = oldKeyboardState.GetPressedKeys();
+
+            bool found = false;
+
+            for (int i = 0; i < currentKeys.Length; i++)
+            {
+                found = false;
+
+                for (int y = 0; y < lastKeys.Length; y++)
+                {
+                    if (currentKeys[i] == lastKeys[i])
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    PressKey(currentKeys[i]);
+                }
+            }
+
+            oldKeyboardState = keyboardState;
+        }
+
+        private void PressKey(Keys key)
+        {
+            string temp = String.Empty;
+
+            switch(editingMode)
+            {
+                case EditingMode.Path:
+                    temp = map.Path;
+                    break;
+
+                default:
+                    return;
+            }
+
+            if (key == Keys.Back)
+            {
+                if (temp.Length > 0)
+                {
+                    temp = temp.Substring(0, temp.Length - 1);
+                }
+            }
+            else if (key == Keys.Enter)
+            {
+                editingMode = EditingMode.None;
+            }
+            else
+            {
+                temp = (temp + (char)key).ToLower();
+            }
+
+            switch (editingMode)
+            {
+                case EditingMode.Path:
+                    map.Path = temp;
+                    break;
+            }
         }
 
         /// <summary>
@@ -525,6 +605,16 @@ namespace MapEditor
             }
 
             Text.DrawClickText(5, 25, "draw: " + layerName, mouseX, mouseY, false);
+
+            Text.Color = Color.White;
+            if (editingMode == EditingMode.Path)
+            {
+                Text.DrawText(5, 45, map.Path + "*");
+            }
+            else
+            {
+                Text.DrawClickText(5, 45, map.Path, mouseX, mouseY, false);
+            }
         }
 
         private void DrawInfo()
@@ -768,6 +858,11 @@ namespace MapEditor
                         map.Ledges[i].Flags = (map.Ledges[i].Flags + 1) % 2;
                     }
                 }
+            }
+
+            if (Text.DrawClickText(5, 45, map.Path, mouseX, mouseY, mouseClick))
+            {
+                editingMode = EditingMode.Path;
             }
 
             Console.WriteLine("X = {0}, Y = {1}", mouseState.X, mouseState.Y);

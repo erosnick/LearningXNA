@@ -14,8 +14,7 @@ namespace MapEditor.Classes
         public int GridSizeX = 20;
         public int GridSizeY = 20;
 
-        // Up to three layers, 64 segments
-        public MapSegment[,] Segments { get; set; }
+        // Up to three layers, 64 segment
         public Dictionary<int, List<MapSegment> > MapSegments;
         public Ledge[] Ledges { get; set; }
 
@@ -23,7 +22,6 @@ namespace MapEditor.Classes
 
         public Map()
         {
-            Segments = new MapSegment[3, 64];
             MapSegments = new Dictionary<int, List<MapSegment>>();
             SegmentDefinitions = new List<SegmentDefinition>();
             Grid = new int [GridSizeX, GridSizeY];
@@ -107,15 +105,6 @@ namespace MapEditor.Classes
 
         public int AddSegment(int layer, int index)
         {
-            for (int i = 0; i < 64; i++)
-            {
-                if (Segments[layer, i] == null)
-                {
-                    Segments[layer, i] = new MapSegment();
-                    Segments[layer, i].Index = index;
-                }
-            }
-
             if (!MapSegments.ContainsKey(layer))
             {
                 MapSegments[layer] = new List<MapSegment>();
@@ -127,8 +116,6 @@ namespace MapEditor.Classes
             MapSegments[layer].Add(mapSegment);
 
             return MapSegments[layer].Count - 1;
-
-            //return -1;
         }
 
         public void Draw(SpriteBatch sprite, Texture2D[] mapTexture, Vector2 scroll)
@@ -225,11 +212,96 @@ namespace MapEditor.Classes
 
         public void Save()
         {
+            var file = new BinaryWriter(File.Open(@"data/" + Path + ".zmx", FileMode.Create));
+
+            for (int i = 0; i < Ledges.Length; i++)
+            {
+                file.Write(Ledges[i].TotalNodes);
+                for (int n = 0; n < Ledges[i].TotalNodes; n++)
+                {
+                    file.Write(Ledges[i].Nodes[n].X);
+                    file.Write(Ledges[i].Nodes[n].Y);
+                }
+
+                file.Write(Ledges[i].Flags);
+            }
+
+            file.Write(MapSegments.Keys.Count);
+
+            foreach (var key in MapSegments.Keys)
+            {
+                file.Write(key);
+                file.Write(MapSegments[key].Count);
+
+                for (int index = 0; index < MapSegments[key].Count; index++)
+                {
+                    file.Write(MapSegments[key][index].Location.X);
+                    file.Write(MapSegments[key][index].Location.Y);
+                }
+            }
+
+            for (int x = 0; x < 20; x++)
+            {
+                for (int y = 0; y < 20; y++)
+                {
+                    file.Write(Grid[x, y]);
+                }
+            }
+
+            file.Close();
+
             Console.WriteLine("Save");
         }
 
         public void Load()
         {
+            var file = new BinaryReader(File.Open(@"data/" + Path + ".zmx", FileMode.Open));
+
+            for (int i = 0; i < Ledges.Length; i++)
+            {
+                Ledges[i] = new Ledge();
+                Ledges[i].TotalNodes = file.ReadInt32();
+
+                for (int n = 0; n < Ledges[i].TotalNodes; n++)
+                {
+                    Ledges[i].Nodes[n] = new Vector2(file.ReadSingle(), file.ReadSingle());
+                }
+
+                Ledges[i].Flags = file.ReadInt32();
+            }
+
+            var keyCount = file.ReadInt32();
+
+            for (int i = 0; i < keyCount; i++)
+            {
+                var key = file.ReadInt32();
+                var segmentCount = file.ReadInt32();
+
+                if (!MapSegments.ContainsKey(key))
+                {
+                    MapSegments[key] = new List<MapSegment>();
+                }
+
+                for (int index = 0; index < segmentCount; index++)
+                {
+                    var mapSegment = new MapSegment();
+                    mapSegment.Index = index;
+                    mapSegment.Layer = key;
+                    mapSegment.Location = new Vector2(file.ReadSingle(), file.ReadSingle());
+                    MapSegments[key].Add(mapSegment);
+                }
+            }
+
+            for (int x = 0; x < 20; x++)
+            {
+                for (int y = 0; y < 20; y++)
+                {
+                    Grid[x, y] = file.ReadInt32();
+                }
+            }
+
+            file.Close();
+
             Console.WriteLine("Read");
         }
     }

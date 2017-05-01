@@ -521,10 +521,13 @@ namespace MapEditor
                 DrawLedgePalette();
             }
 
+            DrawButton(5, 65, 3, mouseX, mouseY, mouseClick);
+            DrawButton(40, 65, 4, mouseX, mouseY, mouseClick);
+
             DrawCursor();
             DrawText();
             DrawInfo();
-
+ 
             base.Draw(gameTime);
         }
 
@@ -753,6 +756,35 @@ namespace MapEditor
             }
         }
 
+        private bool DrawButton(int x, int y, int index, int mouseX, int mouseY, bool mouseClick)
+        {
+            var r = false;
+
+            var sourceRect = new Rectangle(32 * (index % 8), 32 * (index / 8), 32, 32);
+            var destRect = new Rectangle(x, y, 32, 32);
+
+            if (destRect.Contains(mouseX, mouseY))
+            {
+                destRect.X -= 1;
+                destRect.Y -= 1;
+                destRect.Width += 2;
+                destRect.Height += 2;
+
+                if (mouseClick)
+                {
+                    r = true;
+                }
+            }
+
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+
+            spriteBatch.Draw(icons, destRect, sourceRect, Color.White);
+
+            spriteBatch.End();
+
+            return r;
+        }
+
         private bool GetCanEdit()
         {
             if (mouseX > 100 && mouseX < paletteOffsetX && mouseY > 100 && mouseY < 550)
@@ -863,6 +895,16 @@ namespace MapEditor
             if (Text.DrawClickText(5, 45, map.Path, mouseX, mouseY, mouseClick))
             {
                 editingMode = EditingMode.Path;
+            }
+
+            if (DrawButton(5, 65, 3, mouseX, mouseY, mouseClick))
+            {
+                map.Save();
+            }
+
+            if (DrawButton(40, 65, 4, mouseX, mouseY, mouseClick))
+            {
+                map.Load();
             }
 
             Console.WriteLine("X = {0}, Y = {1}", mouseState.X, mouseState.Y);

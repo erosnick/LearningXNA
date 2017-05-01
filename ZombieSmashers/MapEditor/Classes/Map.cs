@@ -222,5 +222,15 @@ namespace MapEditor.Classes
 
             return -1;
         }
+
+        public void Save()
+        {
+            Console.WriteLine("Save");
+        }
+
+        public void Load()
+        {
+            Console.WriteLine("Read");
+        }
     }
 }

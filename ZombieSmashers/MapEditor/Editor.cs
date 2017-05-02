@@ -359,6 +359,7 @@ namespace MapEditor
                         map.MapSegments[currentLayer][index].Location.X = (mouseX - tileSourceBounds[i].Width / 4 + scroll.X * layerScalar);
                         map.MapSegments[currentLayer][index].Location.Y = (mouseY - tileSourceBounds[i].Height / 4 + scroll.Y * layerScalar);
                         mouseDragSegment = index;
+
                         break;
                     }
                 }

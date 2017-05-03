@@ -409,8 +409,6 @@ namespace MapEditor
             preMouseX = mouseX;
             preMouseY = mouseY;
 
-            //AddSegment();
-
             lastMouseState = currentMouseState;
 
             base.Update(gameTime);

@@ -119,13 +119,6 @@ namespace MapEditor
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-            map = new Map();
-
-            tileDestBounds = new List<Rectangle>();
-            tileSourceBounds = new List<Rectangle>();
-
-            GenerateTileBounds();
-
             onMouseLeftButtonClick += OnMouseLeftButtonClick;
             onMouseLeftButtonPressed += OnMouseLeftButtonPressed;
             onMouseLeftButtonReleased += OnMouseLeftButtonReleased;
@@ -140,6 +133,10 @@ namespace MapEditor
 
             GameServices.AddService<GraphicsDevice>(GraphicsDevice);
             GameServices.AddService<ContentManager>(Content);
+
+            map = new Map();
+
+            GenerateTileBounds();
 
             ledgePaletteLocation = new List<Vector2>();
 
@@ -300,6 +297,9 @@ namespace MapEditor
 
         private void GenerateTileBounds()
         {
+            tileDestBounds = new List<Rectangle>();
+            tileSourceBounds = new List<Rectangle>();
+
             Rectangle sourceRect = new Rectangle();
             Rectangle destRect = new Rectangle();
 

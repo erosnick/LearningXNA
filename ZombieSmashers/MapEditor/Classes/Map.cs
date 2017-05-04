@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using Shared;
+using Microsoft.Xna.Framework.Content;
 
 namespace MapEditor.Classes
 {
@@ -20,18 +21,24 @@ namespace MapEditor.Classes
 
         public string Path { get; set; } = "maps.zdx";
 
+        Texture2D nullTexture;
+
         public Map()
         {
             MapSegments = new Dictionary<int, List<MapSegment>>();
             SegmentDefinitions = new List<SegmentDefinition>();
             Grid = new int [GridSizeX, GridSizeY];
             Ledges = new Ledge[16];
+
             for (int i = 0; i < 16; i++)
             {
                 Ledges[i] = new Ledge();
             }
 
             ReadSegmentDefinitions();
+
+            var Content = GameServices.GetService<ContentManager>();
+            nullTexture = Content.Load<Texture2D>(@"gfx/1x1");
         }
 
         private void ReadSegmentDefinitions()
@@ -163,6 +170,11 @@ namespace MapEditor.Classes
 
                     sprite.Draw(mapTexture[segmentDefiniation.SourceIndex], destRect, sourceRect, color);
                     Text.DrawText(destRect.X, destRect.Y, String.Format("{0}", mapSegment.Layer));
+
+                    sprite.Draw(nullTexture, new Rectangle(destRect.X, destRect.Y, destRect.Width, 1), Color.White);
+                    sprite.Draw(nullTexture, new Rectangle(destRect.X, destRect.Y + destRect.Height, destRect.Width, 1), Color.White);
+                    sprite.Draw(nullTexture, new Rectangle(destRect.X, destRect.Y, 1, destRect.Height), Color.White);
+                    sprite.Draw(nullTexture, new Rectangle(destRect.X + destRect.Width, destRect.Y, 1, destRect.Height), Color.White);
                 }
             }
 

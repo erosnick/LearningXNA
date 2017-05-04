@@ -292,6 +292,11 @@ namespace MapEditor
                 }
             }
 
+            if (Keyboard.GetState().IsKeyDown(Keys.Delete))
+            {
+                map.RemoveSegment(currentLayer);
+            }
+
             UpdateKeys();
         }
 

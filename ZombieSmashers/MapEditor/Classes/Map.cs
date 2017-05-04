@@ -127,6 +127,15 @@ namespace MapEditor.Classes
             return MapSegments[layer].Count - 1;
         }
 
+        public void RemoveSegment(int layer)
+        {
+            if (selectedSegmentIndex > -1)
+            {
+                MapSegments[layer].RemoveAt(selectedSegmentIndex);
+                selectedSegmentIndex = -1;
+            }
+        }
+
         public void Draw(SpriteBatch sprite, Texture2D[] mapTexture, Vector2 scroll)
         {
             Rectangle sourceRect = new Rectangle();

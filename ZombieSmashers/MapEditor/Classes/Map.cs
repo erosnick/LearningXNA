@@ -23,6 +23,8 @@ namespace MapEditor.Classes
 
         Texture2D nullTexture;
 
+        int selectedSegmentIndex = -1;
+
         public Map()
         {
             MapSegments = new Dictionary<int, List<MapSegment>>();
@@ -171,10 +173,13 @@ namespace MapEditor.Classes
                     sprite.Draw(mapTexture[segmentDefiniation.SourceIndex], destRect, sourceRect, color);
                     Text.DrawText(destRect.X, destRect.Y, String.Format("{0}", mapSegment.Layer));
 
-                    sprite.Draw(nullTexture, new Rectangle(destRect.X, destRect.Y, destRect.Width, 1), Color.White);
-                    sprite.Draw(nullTexture, new Rectangle(destRect.X, destRect.Y + destRect.Height, destRect.Width, 1), Color.White);
-                    sprite.Draw(nullTexture, new Rectangle(destRect.X, destRect.Y, 1, destRect.Height), Color.White);
-                    sprite.Draw(nullTexture, new Rectangle(destRect.X + destRect.Width, destRect.Y, 1, destRect.Height), Color.White);
+                    if (index == selectedSegmentIndex)
+                    {
+                        sprite.Draw(nullTexture, new Rectangle(destRect.X, destRect.Y, destRect.Width, 1), Color.White);
+                        sprite.Draw(nullTexture, new Rectangle(destRect.X, destRect.Y + destRect.Height, destRect.Width, 1), Color.White);
+                        sprite.Draw(nullTexture, new Rectangle(destRect.X, destRect.Y, 1, destRect.Height), Color.White);
+                        sprite.Draw(nullTexture, new Rectangle(destRect.X + destRect.Width, destRect.Y, 1, destRect.Height), Color.White);
+                    }
                 }
             }
 
@@ -214,6 +219,7 @@ namespace MapEditor.Classes
 
                         if (destRect.Contains(x, y) && key == currentLayer)
                         {
+                            selectedSegmentIndex = index;
                             return index;
                         }
                    }

@@ -8,5 +8,10 @@ namespace MapEditor.Classes
         public Vector2 Location;
         public int Index { get; set; }
         public int Layer { get; set; }
+
+        public MapSegment()
+        {
+
+        }
     }
 }

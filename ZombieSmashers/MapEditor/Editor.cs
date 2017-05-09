@@ -21,7 +21,6 @@ namespace MapEditor
 
         Map map;
 
-
         Texture2D[] mapsTexture;
         Texture2D nullTexture;
 

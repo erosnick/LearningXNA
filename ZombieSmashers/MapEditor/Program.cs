@@ -12,7 +12,7 @@ namespace MapEditor
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main() 
         {
             using (var game = new Editor())
                 game.Run();
